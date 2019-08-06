@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -40,7 +41,12 @@ func (fdcm FastDotCom) RunSpeedTest() (FastDotCom, error) {
 	}
 	println(jsFileName)
 
+	// get token from obfuscated jsFile
 	jsURL := "https://fast.com" + jsFileName
+	jsFile, err := http.Get(jsURL)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	fmt.Println("Javascript url " + jsURL)
 
 	return FastDotCom{}, nil
