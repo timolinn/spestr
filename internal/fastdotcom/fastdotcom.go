@@ -1,12 +1,15 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"log"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/PuerkitoBio/goquery"
 )
+
+const baseURL = "https://api.fast.com/"
 
 // NetworkStatus represents the summary
 // of the tested network
@@ -19,37 +22,48 @@ type NetworkStatus struct {
 	}
 }
 
+type Server struct {
+	URL string `json:"url"`
+}
+
 // FastDotCom represents all the data
 // returned from fast.com
 type FastDotCom struct {
 	Network NetworkStatus
+	Servers []Server
 	Client  string
-	Servers string
 }
 
 // RunSpeedTest interacts with fast.com to fetch
 // the Network status data and metadata
 func (fdcm FastDotCom) RunSpeedTest() (FastDotCom, error) {
-	// get the html page and parse it
-	html := getHTML("https://fast.com")
-
-	// get the javascript file
-	// only one js file: /app-8f1bee.js at the time of writing
-	jsFileName, ok := html.Find("script").Attr("src")
-	if !ok {
-		log.Fatalln("Src tag missing...")
+	servers, _ := getServers()
+	for _, server := range servers {
+		fmt.Println(server.URL)
 	}
-	println(jsFileName)
-
-	// get token from obfuscated jsFile
-	jsURL := "https://fast.com" + jsFileName
-	jsFile, err := http.Get(jsURL)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	fmt.Println("Javascript url " + jsURL)
-
 	return FastDotCom{}, nil
+}
+
+func getServers() ([]Server, error) {
+	// fast.com token. This was gotten from the jsFile on fast.com
+	// /app-8f1bee.js at the time of writing
+	token := "YXNkZmFzZGxmbnNkYWZoYXNkZmhrYWxm"
+	url := baseURL + "netflix/speedtest?https=true&token=" + token + "&urlCount=3"
+
+	urls, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer urls.Body.Close()
+
+	body, err := ioutil.ReadAll(urls.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var srs []Server
+	json.Unmarshal(body, &srs)
+	return srs, nil
 }
 
 func getHTML(url string) *goquery.Document {
