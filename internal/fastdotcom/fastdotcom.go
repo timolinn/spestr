@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-
-	"github.com/PuerkitoBio/goquery"
 )
 
 const baseURL = "https://api.fast.com/"
@@ -36,10 +34,13 @@ type FastDotCom struct {
 
 // RunSpeedTest interacts with fast.com to fetch
 // the Network status data and metadata
-func (fdcm FastDotCom) RunSpeedTest() (FastDotCom, error) {
+func (fdcm FastDotCom) RunSpeedTest(dataChannel chan []byte) (FastDotCom, error) {
 	servers, _ := getServers()
 	for _, server := range servers {
 		fmt.Println(server.URL)
+		go func(url string, data chan []byte, databytes []byte) {
+			getHTML(url, data, databytes)
+		}(server.URL, dataChannel, []byte(server.URL))
 	}
 	return FastDotCom{}, nil
 }
@@ -66,12 +67,18 @@ func getServers() ([]Server, error) {
 	return srs, nil
 }
 
-func getHTML(url string) *goquery.Document {
-	doc, err := goquery.NewDocument(url)
+func getHTML(url string, dataChannel chan []byte, bytess []byte) {
+	bytes, err := http.Get(url)
 	if err != nil {
 		panic(err)
 	}
-	return doc
+	defer bytes.Body.Close()
+	// expecting upto 25mb of data
+	// this should be chunked or bufferred
+	// body, _ := ioutil.ReadAll(bytes.Body)
+
+	fmt.Println("passing data for " + url + " through the channel")
+	dataChannel <- bytess
 }
 
 func findIpv4Addr(fqdn string) {
@@ -84,10 +91,13 @@ func findIpv6Addr(fqdn string) {
 
 func main() {
 	fastCom := FastDotCom{}
-	res, err := fastCom.RunSpeedTest()
+	dataChannel := make(chan []byte)
+	_, err := fastCom.RunSpeedTest(dataChannel)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println(res)
+	fmt.Println(<-dataChannel)
+	// close(dataChannel)
+	fmt.Scanln()
 }
