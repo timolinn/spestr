@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"runtime"
 	"time"
 )
 
@@ -39,11 +40,10 @@ func (fdcm FastDotCom) RunSpeedTest(dataChannel chan []byte) (FastDotCom, error)
 	servers, _ := getServers()
 	numComplete := 0
 	for _, server := range servers {
-		fmt.Println(server.URL)
 		numComplete++
 		go func(url string, databytes []byte) {
 			html := getHTML(url, databytes)
-			fmt.Println(html)
+			fmt.Println(len(html))
 			numComplete--
 		}(server.URL, []byte(server.URL))
 	}
@@ -51,7 +51,6 @@ func (fdcm FastDotCom) RunSpeedTest(dataChannel chan []byte) (FastDotCom, error)
 	for numComplete > 0 {
 		time.Sleep(1 * time.Millisecond)
 	}
-	fmt.Println("done")
 	return FastDotCom{}, nil
 }
 
@@ -85,10 +84,10 @@ func getHTML(url string, bytess []byte) []byte {
 	defer bytes.Body.Close()
 	// expecting upto 25mb of data
 	// this should be chunked or bufferred
-	// body, _ := ioutil.ReadAll(bytes.Body)
+	body, _ := ioutil.ReadAll(bytes.Body)
 
 	// fmt.Println("passing data for " + url + " through the channel")
-	return bytess
+	return body
 }
 
 func findIpv4Addr(fqdn string) {
@@ -101,6 +100,7 @@ func findIpv6Addr(fqdn string) {
 
 func main() {
 	start := time.Now()
+	runtime.GOMAXPROCS(3)
 	fastCom := FastDotCom{}
 	dataChannel := make(chan []byte)
 	_, err := fastCom.RunSpeedTest(dataChannel)
@@ -108,6 +108,5 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println("Done")
 	fmt.Println(time.Since(start))
 }
