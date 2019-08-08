@@ -41,21 +41,17 @@ func (fdcm FastDotCom) RunSpeedTest(dataChannel chan []byte) (FastDotCom, error)
 	for _, server := range servers {
 		fmt.Println(server.URL)
 		numComplete++
-		go func(url string, data chan []byte, databytes []byte) {
+		go func(url string, databytes []byte) {
 			html := getHTML(url, databytes)
-			// fmt.Println(html)
-			data <- html
+			fmt.Println(html)
 			numComplete--
-		}(server.URL, dataChannel, []byte(server.URL))
+		}(server.URL, []byte(server.URL))
 	}
 
 	for numComplete > 0 {
-		fmt.Printf("at %d\n", numComplete)
-		time.Sleep(1000 * time.Millisecond)
+		time.Sleep(1 * time.Millisecond)
 	}
-
 	fmt.Println("done")
-	close(dataChannel)
 	return FastDotCom{}, nil
 }
 
@@ -112,9 +108,6 @@ func main() {
 		panic(err)
 	}
 
-	for data := range dataChannel {
-		fmt.Println(data)
-	}
 	fmt.Println("Done")
 	fmt.Println(time.Since(start))
 }
