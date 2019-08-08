@@ -35,19 +35,20 @@ type FastDotCom struct {
 
 // RunSpeedTest interacts with fast.com to fetch
 // the Network status data and metadata
-func (fdcm FastDotCom) RunSpeedTest(dataChannel chan []byte) (FastDotCom, error) {
-	servers, _ := getServers()
-	for _, server := range servers {
+func (fdcm FastDotCom) RunSpeedTest(dataChannel chan []byte, serverChannel chan []Server) (FastDotCom, error) {
+	go getServers(serverChannel)
+	idx := 0
+	for servers := <-serverChannel; idx < len(servers); idx++ {
 		go func(url string, databytes []byte) {
-			html := getHTML(url, databytes)
-			dataChannel <- html
-		}(server.URL, []byte(server.URL))
+			// html := getHTML(url, databytes)
+			dataChannel <- getHTML(url, databytes)
+		}(servers[idx].URL, []byte(servers[idx].URL))
 	}
 
 	return FastDotCom{}, nil
 }
 
-func getServers() ([]Server, error) {
+func getServers(serverChannel chan []Server) ([]Server, error) {
 	// fast.com token. This was gotten from the jsFile on fast.com
 	// /app-8f1bee.js at the time of writing
 	token := "YXNkZmFzZGxmbnNkYWZoYXNkZmhrYWxm"
@@ -66,6 +67,9 @@ func getServers() ([]Server, error) {
 
 	var srs []Server
 	json.Unmarshal(body, &srs)
+	serverChannel <- srs
+	fmt.Println("Closing server channel")
+	close(serverChannel)
 	return srs, nil
 }
 
@@ -79,7 +83,6 @@ func getHTML(url string, bytess []byte) []byte {
 	// this should be chunked or bufferred
 	body, _ := ioutil.ReadAll(bytes.Body)
 
-	// fmt.Println("passing data for " + url + " through the channel")
 	return body
 }
 
@@ -95,7 +98,8 @@ func main() {
 	start := time.Now()
 	fastCom := FastDotCom{}
 	dataChannel := make(chan []byte)
-	_, err := fastCom.RunSpeedTest(dataChannel)
+	serverChannel := make(chan []Server)
+	_, err := fastCom.RunSpeedTest(dataChannel, serverChannel)
 	if err != nil {
 		panic(err)
 	}
