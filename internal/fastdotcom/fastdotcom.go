@@ -44,7 +44,6 @@ func (fdcm FastDotCom) RunSpeedTest(dataChannel chan []byte) (FastDotCom, error)
 		}(server.URL, []byte(server.URL))
 	}
 
-	fmt.Println("done")
 	return FastDotCom{}, nil
 }
 
@@ -78,10 +77,10 @@ func getHTML(url string, bytess []byte) []byte {
 	defer bytes.Body.Close()
 	// expecting upto 25mb of data
 	// this should be chunked or bufferred
-	// body, _ := ioutil.ReadAll(bytes.Body)
+	body, _ := ioutil.ReadAll(bytes.Body)
 
 	// fmt.Println("passing data for " + url + " through the channel")
-	return bytess
+	return body
 }
 
 func findIpv4Addr(fqdn string) {
@@ -103,7 +102,7 @@ func main() {
 	numComplete := 0
 	for data := range dataChannel {
 		numComplete++
-		fmt.Println(data)
+		fmt.Println(len(data))
 		if numComplete > 2 {
 			close(dataChannel)
 		}
