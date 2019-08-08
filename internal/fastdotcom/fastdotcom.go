@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 )
 
 const baseURL = "https://api.fast.com/"
@@ -36,12 +37,25 @@ type FastDotCom struct {
 // the Network status data and metadata
 func (fdcm FastDotCom) RunSpeedTest(dataChannel chan []byte) (FastDotCom, error) {
 	servers, _ := getServers()
+	numComplete := 0
 	for _, server := range servers {
 		fmt.Println(server.URL)
+		numComplete++
 		go func(url string, data chan []byte, databytes []byte) {
-			getHTML(url, data, databytes)
+			html := getHTML(url, databytes)
+			// fmt.Println(html)
+			data <- html
+			numComplete--
 		}(server.URL, dataChannel, []byte(server.URL))
 	}
+
+	for numComplete > 0 {
+		fmt.Printf("at %d\n", numComplete)
+		time.Sleep(1000 * time.Millisecond)
+	}
+
+	fmt.Println("done")
+	close(dataChannel)
 	return FastDotCom{}, nil
 }
 
@@ -67,7 +81,7 @@ func getServers() ([]Server, error) {
 	return srs, nil
 }
 
-func getHTML(url string, dataChannel chan []byte, bytess []byte) {
+func getHTML(url string, bytess []byte) []byte {
 	bytes, err := http.Get(url)
 	if err != nil {
 		panic(err)
@@ -77,8 +91,8 @@ func getHTML(url string, dataChannel chan []byte, bytess []byte) {
 	// this should be chunked or bufferred
 	// body, _ := ioutil.ReadAll(bytes.Body)
 
-	fmt.Println("passing data for " + url + " through the channel")
-	dataChannel <- bytess
+	// fmt.Println("passing data for " + url + " through the channel")
+	return bytess
 }
 
 func findIpv4Addr(fqdn string) {
@@ -90,6 +104,7 @@ func findIpv6Addr(fqdn string) {
 }
 
 func main() {
+	start := time.Now()
 	fastCom := FastDotCom{}
 	dataChannel := make(chan []byte)
 	_, err := fastCom.RunSpeedTest(dataChannel)
@@ -97,7 +112,9 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println(<-dataChannel)
-	// close(dataChannel)
-	fmt.Scanln()
+	for data := range dataChannel {
+		fmt.Println(data)
+	}
+	fmt.Println("Done")
+	fmt.Println(time.Since(start))
 }
