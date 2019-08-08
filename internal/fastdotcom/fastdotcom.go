@@ -37,25 +37,14 @@ type FastDotCom struct {
 // the Network status data and metadata
 func (fdcm FastDotCom) RunSpeedTest(dataChannel chan []byte) (FastDotCom, error) {
 	servers, _ := getServers()
-	numComplete := 0
 	for _, server := range servers {
-		fmt.Println(server.URL)
-		numComplete++
-		go func(url string, data chan []byte, databytes []byte) {
+		go func(url string, databytes []byte) {
 			html := getHTML(url, databytes)
-			// fmt.Println(html)
-			data <- html
-			numComplete--
-		}(server.URL, dataChannel, []byte(server.URL))
-	}
-
-	for numComplete > 0 {
-		fmt.Printf("at %d\n", numComplete)
-		time.Sleep(1000 * time.Millisecond)
+			dataChannel <- html
+		}(server.URL, []byte(server.URL))
 	}
 
 	fmt.Println("done")
-	close(dataChannel)
 	return FastDotCom{}, nil
 }
 
@@ -111,9 +100,13 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
+	numComplete := 0
 	for data := range dataChannel {
+		numComplete++
 		fmt.Println(data)
+		if numComplete > 2 {
+			close(dataChannel)
+		}
 	}
 	fmt.Println("Done")
 	fmt.Println(time.Since(start))
