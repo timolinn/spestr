@@ -35,10 +35,11 @@ type FastDotCom struct {
 
 // RunSpeedTest interacts with fast.com to fetch
 // the Network status data and metadata
-func (fdcm FastDotCom) RunSpeedTest(dataChannel chan int) (FastDotCom, error) {
+func (fdcm FastDotCom) RunSpeedTest(dataChannel chan []int) (FastDotCom, error) {
 	servers, _ := getServers()
-	for _, server := range servers {
-		go getRandomData(server.URL, dataChannel)
+	result := make([]int, 3)
+	for idx, server := range servers {
+		go getRandomData(server.URL, dataChannel, result, idx)
 	}
 	time.Sleep(1 * time.Second)
 	return FastDotCom{}, nil
@@ -66,7 +67,7 @@ func getServers() ([]Server, error) {
 	return srs, nil
 }
 
-func getRandomData(url string, dataChannel chan int) {
+func getRandomData(url string, dataChannel chan []int, result []int, index int) {
 	// p := new(bytes.Buffer)
 	// data, err := http.NewRequest("GET", url, p)
 	data, err := http.Get(url)
@@ -78,18 +79,21 @@ func getRandomData(url string, dataChannel chan int) {
 	buf := make([]byte, 100*1024)
 	// s := strings.Split(strings.Split(url, ".")[4], "=")
 	idx := 0
+
 	for {
 		idx++
-		fmt.Println(idx)
 		// fmt.Println(s[len(s)-1])
 		_, err := data.Body.Read(buf)
 		if err != nil {
 			break
 		}
-		dataChannel <- len(buf) * idx
+		// fmt.Printf("Before: %d\n", result)
+		result[index] = len(buf) * idx
+		// fmt.Printf("After: %d\n", result)
+		dataChannel <- result
 		// this helps ensure the first goroutine
 		// does not domionate returned bytes
-		// time.Sleep(3 * time.Second)
+		time.Sleep(100 * time.Millisecond)
 	}
 
 	// fmt.Println("passing data for " + url + " through the channel")
@@ -112,40 +116,55 @@ func main() {
 	start := time.Now()
 	// runtime.GOMAXPROCS(4)
 	fastCom := FastDotCom{}
-	dataChannel := make(chan int)
-	_, err := fastCom.RunSpeedTest(dataChannel)
-	if err != nil {
-		panic(err)
-	}
+	dataChannel := make(chan []int)
+	go fastCom.RunSpeedTest(dataChannel)
+	// if err != nil {
+	// 	panic(err)
+	// }
 	maxtime := 15
 	sleepseconds := 3
 	highestspeedkBps := 0
 	// maxdownload := 60 //MB
 	nrloops := maxtime / sleepseconds
-	count := 0
+	// count := 0
 	lastTotalBytes := 0
-	totalBytes := 0
-	for data := range dataChannel {
-		count++
-		totalBytes += data
-		fmt.Println(totalBytes)
+	// go func() {
+	var result []int
+	go func() {
+		for data := range dataChannel {
+			result = data
+			// fmt.Println(data)
+		}
+	}()
+
+	for i := 0; i < nrloops; i++ {
+		totalBytes := 0
+		for _, data := range result {
+			totalBytes += data
+		}
 		delta := totalBytes - lastTotalBytes
+		fmt.Printf("delta = %d\n", delta)
 		speedkBps := (delta / sleepseconds) / (1024)
+		fmt.Printf("speedkBps = %d\n", speedkBps)
 		lastTotalBytes = totalBytes
 		if speedkBps > highestspeedkBps {
 			highestspeedkBps = speedkBps
 		}
-		// time.Sleep(3 * time.Second)
+		// fmt.Printf("highestspeedkBps = %d\n", highestspeedkBps)
+		time.Sleep(time.Duration(sleepseconds) * time.Second)
 		// for num := range []int{1, 2, 3} {
 		// 	fmt.Println(num)
 		// }
 
-		if count > nrloops*12 {
-			close(dataChannel)
-		}
+		// if count > nrloops*12 {
+		// 	close(dataChannel)
+		// }
 	}
+	// }()
+	// fmt.Scanln()
 	Mbps := (applicationBytesToNetworkBits(highestspeedkBps) / 1024)
 	fmt.Println(Mbps)
+	close(dataChannel)
 	fmt.Println("Done")
 	fmt.Println(time.Since(start))
 }
