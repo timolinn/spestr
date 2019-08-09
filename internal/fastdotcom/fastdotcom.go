@@ -35,15 +35,12 @@ type FastDotCom struct {
 
 // RunSpeedTest interacts with fast.com to fetch
 // the Network status data and metadata
-func (fdcm FastDotCom) RunSpeedTest(dataChannel chan []byte) (FastDotCom, error) {
+func (fdcm FastDotCom) RunSpeedTest(dataChannel chan int) (FastDotCom, error) {
 	servers, _ := getServers()
 	for _, server := range servers {
-		go func(url string, databytes []byte) {
-			html := getHTML(url, databytes)
-			dataChannel <- html
-		}(server.URL, []byte(server.URL))
+		go getRandomData(server.URL, dataChannel)
 	}
-
+	time.Sleep(1 * time.Second)
 	return FastDotCom{}, nil
 }
 
@@ -69,18 +66,34 @@ func getServers() ([]Server, error) {
 	return srs, nil
 }
 
-func getHTML(url string, bytess []byte) []byte {
-	bytes, err := http.Get(url)
+func getRandomData(url string, dataChannel chan int) {
+	// p := new(bytes.Buffer)
+	// data, err := http.NewRequest("GET", url, p)
+	data, err := http.Get(url)
 	if err != nil {
 		panic(err)
 	}
-	defer bytes.Body.Close()
+	defer data.Body.Close()
 	// expecting upto 25mb of data
-	// this should be chunked or bufferred
-	body, _ := ioutil.ReadAll(bytes.Body)
+	buf := make([]byte, 100*1024)
+	// s := strings.Split(strings.Split(url, ".")[4], "=")
+	idx := 0
+	for {
+		idx++
+		fmt.Println(idx)
+		// fmt.Println(s[len(s)-1])
+		_, err := data.Body.Read(buf)
+		if err != nil {
+			break
+		}
+		dataChannel <- len(buf) * idx
+		// this helps ensure the first goroutine
+		// does not domionate returned bytes
+		// time.Sleep(3 * time.Second)
+	}
 
 	// fmt.Println("passing data for " + url + " through the channel")
-	return body
+	// return []byte{}
 }
 
 func findIpv4Addr(fqdn string) {
@@ -91,22 +104,48 @@ func findIpv6Addr(fqdn string) {
 
 }
 
+func applicationBytesToNetworkBits(kbps int) float64 {
+	return (float64(kbps) * float64(8) * float64(1.0415))
+}
+
 func main() {
 	start := time.Now()
+	// runtime.GOMAXPROCS(4)
 	fastCom := FastDotCom{}
-	dataChannel := make(chan []byte)
+	dataChannel := make(chan int)
 	_, err := fastCom.RunSpeedTest(dataChannel)
 	if err != nil {
 		panic(err)
 	}
-	numComplete := 0
+	maxtime := 15
+	sleepseconds := 3
+	highestspeedkBps := 0
+	// maxdownload := 60 //MB
+	nrloops := maxtime / sleepseconds
+	count := 0
+	lastTotalBytes := 0
+	totalBytes := 0
 	for data := range dataChannel {
-		numComplete++
-		fmt.Println(len(data))
-		if numComplete > 2 {
+		count++
+		totalBytes += data
+		fmt.Println(totalBytes)
+		delta := totalBytes - lastTotalBytes
+		speedkBps := (delta / sleepseconds) / (1024)
+		lastTotalBytes = totalBytes
+		if speedkBps > highestspeedkBps {
+			highestspeedkBps = speedkBps
+		}
+		// time.Sleep(3 * time.Second)
+		// for num := range []int{1, 2, 3} {
+		// 	fmt.Println(num)
+		// }
+
+		if count > nrloops*12 {
 			close(dataChannel)
 		}
 	}
+	Mbps := (applicationBytesToNetworkBits(highestspeedkBps) / 1024)
+	fmt.Println(Mbps)
 	fmt.Println("Done")
 	fmt.Println(time.Since(start))
 }
