@@ -1,9 +1,7 @@
-package main
+package fastdotcom
 
 import (
-	"fmt"
 	"log"
-	"time"
 
 	"github.com/ddo/go-fast"
 )
@@ -13,11 +11,11 @@ const baseURL = "https://api.fast.com/"
 // NetworkStatus represents the summary
 // of the tested network
 type NetworkStatus struct {
-	Upload   string
-	Download string
+	Upload   int64
+	Download int64
 	Latency  struct {
-		Loaded   string
-		Unloaded string
+		Loaded   int64
+		Unloaded int64
 	}
 }
 
@@ -35,7 +33,7 @@ func checkError(err error) {
 
 // RunSpeedTest interacts with fast.com to fetch
 // the Network status data and metadata
-func (fdcm FastDotCom) RunSpeedTest(dataChannel chan []int) (FastDotCom, error) {
+func (fdcm FastDotCom) RunSpeedTest(dataChannel chan int64) (FastDotCom, error) {
 	fastCom := fast.New()
 
 	// initialize
@@ -48,24 +46,29 @@ func (fdcm FastDotCom) RunSpeedTest(dataChannel chan []int) (FastDotCom, error) 
 
 	// measure in bits per second
 	KbpsChan := make(chan float64)
-
+	var Mbps int64
 	go func() {
 		for Kbps := range KbpsChan {
-			fmt.Printf("%.2f Kbps %.2f Mbps\n", Kbps, Kbps/1000)
+			// fmt.Printf("%.2f Kbps %.2f Mbps\n", Kbps, Kbps/1000)
+			Mbps = int64(Kbps / 1000)
+			// dataChannel <- Mbps
 		}
 	}()
 
 	err = fastCom.Measure(urls, KbpsChan)
 	checkError(err)
-	return FastDotCom{}, nil
+	fdcm.Network.Download = Mbps
+	return fdcm, nil
 }
 
-func main() {
-	start := time.Now()
-	// runtime.GOMAXPROCS(4)
-	fastCom := FastDotCom{}
-	dataChannel := make(chan []int)
-	fastCom.RunSpeedTest(dataChannel)
+// func main() {
+// 	start := time.Now()
+// 	// runtime.GOMAXPROCS(4)
+// 	fastCom := FastDotCom{}
+// 	dataChannel := make(chan int64)
+// 	fastCom, err := fastCom.RunSpeedTest(dataChannel)
+// 	checkError(err)
 
-	fmt.Println(time.Since(start))
-}
+// 	fmt.Printf("Your internet download speed in bits per second is %d Mbps\n ", fastCom.Network.Download)
+// 	fmt.Println(time.Since(start))
+// }
