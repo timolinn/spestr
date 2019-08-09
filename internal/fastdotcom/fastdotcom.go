@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/ddo/go-fast"
+	"github.com/pkg/errors"
 )
 
 const baseURL = "https://api.fast.com/"
@@ -25,9 +26,9 @@ type FastDotCom struct {
 	Network NetworkStatus
 }
 
-func checkError(err error) {
+func checkError(err error, context string) {
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln(errors.Wrap(err, context))
 	}
 }
 
@@ -38,11 +39,11 @@ func (fdcm FastDotCom) RunSpeedTest(dataChannel chan int64) (FastDotCom, error) 
 
 	// initialize
 	err := fastCom.Init()
-	checkError(err)
+	checkError(err, "failed to initialize fastCom")
 
 	// get urls, typically 3 in number
 	urls, err := fastCom.GetUrls()
-	checkError(err)
+	checkError(err, "failed to get Urls")
 
 	// measure in bits per second
 	KbpsChan := make(chan float64)
@@ -56,7 +57,7 @@ func (fdcm FastDotCom) RunSpeedTest(dataChannel chan int64) (FastDotCom, error) 
 	}()
 
 	err = fastCom.Measure(urls, KbpsChan)
-	checkError(err)
+	checkError(err, "Speed measurement failed")
 	fdcm.Network.Download = Mbps
 	return fdcm, nil
 }
@@ -67,7 +68,7 @@ func (fdcm FastDotCom) RunSpeedTest(dataChannel chan int64) (FastDotCom, error) 
 // 	fastCom := FastDotCom{}
 // 	dataChannel := make(chan int64)
 // 	fastCom, err := fastCom.RunSpeedTest(dataChannel)
-// 	checkError(err)
+// 	checkError(err, "Speed test failed")
 
 // 	fmt.Printf("Your internet download speed in bits per second is %d Mbps\n ", fastCom.Network.Download)
 // 	fmt.Println(time.Since(start))
