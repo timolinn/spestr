@@ -149,3 +149,43 @@ func main() {
 	fmt.Println("Done")
 	fmt.Println(time.Since(start))
 }
+
+// func main() {
+// 	start := time.Now()
+// 	// runtime.GOMAXPROCS(4)
+// 	fastCom := FastDotCom{}
+// 	dataChannel := make(chan int)
+// 	_, err := fastCom.RunSpeedTest(dataChannel)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	maxtime := 10
+// 	sleepseconds := 3
+// 	highestspeedkBps := 0
+// 	// maxdownload := 60 //MB
+// 	nrloops := maxtime / sleepseconds
+// 	count := 0
+// 	lastTotalBytes := 0
+// 	totalBytes := 0
+// 	go func() {
+
+// 		for data := range dataChannel {
+// 			count++
+// 			totalBytes += data
+// 			fmt.Println(totalBytes)
+// 			delta := totalBytes - lastTotalBytes
+// 			speedkBps := (delta / sleepseconds) / (1024)
+// 			lastTotalBytes = totalBytes
+// 			if speedkBps > highestspeedkBps {
+// 				highestspeedkBps = speedkBps
+// 			}
+
+// 		}
+// 	}()
+// 	time.Sleep(time.Duration(nrloops*3) * time.Second)
+// 	close(dataChannel)
+// 	Mbps := (applicationBytesToNetworkBits(highestspeedkBps) / 1024)
+// 	fmt.Println(Mbps)
+// 	fmt.Println("Done")
+// 	fmt.Println(time.Since(start))
+// }
