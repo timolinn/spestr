@@ -1,6 +1,7 @@
 package fastdotcom
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/ddo/go-fast"
@@ -50,7 +51,7 @@ func (fdcm FastDotCom) RunSpeedTest(dataChannel chan int64) (FastDotCom, error) 
 	var Mbps int64
 	go func() {
 		for Kbps := range KbpsChan {
-			// fmt.Printf("%.2f Kbps %.2f Mbps\n", Kbps, Kbps/1000)
+			fmt.Printf("%.2f Kbps %.2f Mbps\n", Kbps, Kbps/1000)
 			Mbps = int64(Kbps / 1000)
 			// dataChannel <- Mbps
 		}

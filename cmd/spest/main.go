@@ -13,11 +13,11 @@ import (
 )
 
 func main() {
-	router := gin.Default()
-	router.GET("/", func(c *gin.Context) {
-		// time.Sleep(5 * time.Second)
-		c.String(http.StatusOK, "Welcome to Spest")
-	})
+	router := gin.New()
+
+	router.Use(gin.Logger() /* ,gin.Recovery()*/)
+
+	registerRoutes(router)
 
 	srv := &http.Server{
 		Addr:    ":8080",
