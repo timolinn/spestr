@@ -16,6 +16,10 @@ func main() {
 	router := gin.New()
 
 	router.Use(gin.Logger() /* ,gin.Recovery()*/)
+	router.LoadHTMLFiles("templates/views/index.html")
+	router.Static("/js/", "./public/js")
+	router.Static("/css/", "./public/css")
+	router.Static("/img/", "./public/images")
 
 	registerRoutes(router)
 

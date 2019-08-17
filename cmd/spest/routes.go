@@ -1,14 +1,13 @@
 package main
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
+	"github.com/timolinn/spestr/internal/home"
+	"github.com/timolinn/spestr/internal/locations"
 )
 
 func registerRoutes(router *gin.Engine) {
-	router.GET("/", func(c *gin.Context) {
-		// time.Sleep(5 * time.Second)
-		c.String(http.StatusOK, "Welcome to Spest")
-	})
+	home.HandleHome(router)
+	home.RunTest(router)
+	locations.GetLocation(router)
 }
