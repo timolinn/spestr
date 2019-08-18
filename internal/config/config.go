@@ -67,7 +67,3 @@ func (c *Configuration) SetValuesFromFile(fileName string) error {
 func (c *Configuration) GoogleAPIKey() string {
 	return c.Google.APIKey
 }
-
-func (c *Configuration) GetToken() string {
-	return c.Token
-}
