@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 
 	"github.com/kr/pretty"
 	"github.com/pkg/errors"
@@ -63,4 +64,11 @@ func GetIPAddr() (string, error) {
 	}
 
 	return "", errors.New("IP not found")
+}
+
+// Returns true if file exists
+func Exists(filename string) bool {
+	info, err := os.Stat(filename)
+
+	return err == nil && !info.IsDir()
 }
