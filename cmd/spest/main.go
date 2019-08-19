@@ -2,21 +2,25 @@ package main
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/timolinn/spestr/internal/config"
-
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
+	"github.com/timolinn/spestr/internal/config"
 )
 
 func main() {
 	router := gin.New()
 	config := config.New()
+
+	// initailize logger
+	// set to true only when environment
+	// is in development
+	config.InitLogger(config.Environment == "development")
 
 	router.Use(gin.Logger() /* ,gin.Recovery()*/)
 	router.LoadHTMLFiles("templates/views/index.html")

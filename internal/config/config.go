@@ -17,8 +17,9 @@ type Configuration struct {
 	Google struct {
 		APIKey string `yaml:"apiKey"`
 	}
-	Token    string `yaml:"token"`
-	Postgres *PostgresConfig
+	Token       string `yaml:"token"`
+	Postgres    *PostgresConfig
+	Environment string `yaml:"environment"`
 }
 
 // PostgresConfig is the database config
@@ -30,10 +31,14 @@ type PostgresConfig struct {
 }
 
 // InitLogger configure the logger
-func InitLogger(debug bool) {
-	log.SetFormatter(&log.TextFormatter{
-		FullTimestamp: true,
-	})
+func (c *Configuration) InitLogger(debug bool) {
+	if c.Environment == "production" {
+		log.SetFormatter(&log.JSONFormatter{})
+	} else {
+		log.SetFormatter(&log.TextFormatter{
+			FullTimestamp: true,
+		})
+	}
 
 	if debug == true {
 		log.SetLevel(log.DebugLevel)
