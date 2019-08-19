@@ -24,9 +24,9 @@ type Configuration struct {
 	Environment string `yaml:"environment"`
 	Logs        string `yaml:"logs"`
 	Database    struct {
-		Dialect string `yaml:"dialect"`
+		Driver   string `yaml:"dialect"`
+		Postgres *PostgresConfig
 	}
-	Postgres *PostgresConfig
 }
 
 // PostgresConfig is the database config
@@ -68,12 +68,13 @@ func (c *Configuration) InitLogger(debug bool) {
 	}
 }
 
-// New creates a new configuration
+// New creates a new *Configuration
 func New() *Configuration {
 	cfg := new(Configuration)
+	// TODO: select config file based on environment
 	err := cfg.SetValuesFromFile("spestr.yml")
 	if err != nil {
-		log.Fatalln("Config file not found!")
+		log.Fatalf("Loading configuration file failed: %s", err.Error())
 	}
 	return cfg
 }
@@ -99,30 +100,30 @@ func (c *Configuration) GoogleAPIKey() string {
 
 // Dialect returns the database driver name
 func (c *Configuration) Dialect() string {
-	return c.Database.Dialect
+	return c.Database.Driver
 }
 
 // DBHost returns database Host, "localhost" by default
 func (c *Configuration) DBHost() string {
-	return c.Postgres.Host
+	return c.Database.Postgres.Host
 }
 
 // DBPort returns database Port
 func (c *Configuration) DBPort() int {
-	return c.Postgres.PORT
+	return c.Database.Postgres.PORT
 }
 
 // DBName returns database name
 func (c *Configuration) DBName() string {
-	return c.Postgres.Dbname
+	return c.Database.Postgres.Dbname
 }
 
 // DBUser returns database User
 func (c *Configuration) DBUser() string {
-	return c.Postgres.User
+	return c.Database.Postgres.User
 }
 
 // DBPass returns database Password
 func (c *Configuration) DBPass() string {
-	return c.Postgres.Password
+	return c.Database.Postgres.Password
 }

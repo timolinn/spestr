@@ -8,15 +8,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/timolinn/spestr/internal/config"
+	"github.com/timolinn/spestr/internal/home"
 	"github.com/timolinn/spestr/internal/isp"
 	"github.com/timolinn/spestr/internal/locations"
-
-	"github.com/jinzhu/gorm"
-
-	"github.com/timolinn/spestr/internal/config"
 	"github.com/timolinn/spestr/internal/platforms/postgres"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	log "github.com/sirupsen/logrus"
 )
@@ -57,13 +56,13 @@ func main() {
 	// Wait for interrupt signal to gracefully shutdown the server with
 	// a timeout of 5 seconds.
 	quit := make(chan os.Signal, 1)
-	// kill (no param) default send syscanll.SIGTERM
+	// kill (no param) default send syscall.SIGTERM
 	// kill -2 is syscall.SIGINT
-	// kill -9 is syscall. SIGKILL but can"t be catch, so don't need add it
+	// kill -9 is syscall.SIGKILL but can't be caught
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	log.Info("shuting down database...")
+	log.Info("closing database connection ...")
 	closeDb(db)
 
 	log.Info("Shutdown Server ...")
@@ -74,11 +73,11 @@ func main() {
 		log.Fatal("Server Shutdown: ", err)
 	}
 
-	log.Info("Server exiting")
+	log.Info("Server exiting. ..")
 }
 
 func initDB(cfg *config.Configuration) *gorm.DB {
-	db, err := postgres.InitDatabase(cfg.DBHost(), cfg.DBPort(), cfg.DBUser(), cfg.DBName(), cfg.DBPass())
+	db, err := postgres.ConnectToDatabase(cfg.Dialect(), cfg.DBHost(), cfg.DBPort(), cfg.DBUser(), cfg.DBName(), cfg.DBPass())
 	if err != nil {
 		log.Fatalf("error initializing database: %s", err.Error())
 	}
@@ -91,6 +90,7 @@ func runMigrations(db *gorm.DB) {
 	db.AutoMigrate(
 		&locations.Location{},
 		&isp.IspModel{},
+		&home.NetworkModel{},
 	)
 }
 

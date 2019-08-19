@@ -24,8 +24,8 @@ func getCoordinates(apiKey string) (string, error) {
 	}
 
 	r := &maps.LatLng{
-		Lat: 6.4474,
-		Lng: 3.3903,
+		Lat: 9.081999, //6.4474,
+		Lng: 8.675277, //3.3903,
 	}
 	// r := &maps.PlaceDetailsRequest{
 	// 	Fields: []maps.PlaceDetailsFieldMask{
