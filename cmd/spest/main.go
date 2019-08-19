@@ -8,6 +8,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/timolinn/spestr/internal/isp"
+	"github.com/timolinn/spestr/internal/locations"
+
+	"github.com/jinzhu/gorm"
+
 	"github.com/timolinn/spestr/internal/config"
 	"github.com/timolinn/spestr/internal/platforms/postgres"
 
@@ -17,7 +22,6 @@ import (
 )
 
 func main() {
-	router := gin.New()
 	config := config.New()
 
 	// initailize logger
@@ -26,9 +30,12 @@ func main() {
 	config.InitLogger(config.Environment == "development")
 
 	// Create database connection
-	initDB(config)
+	db := initDB(config)
+	// Migrate database
+	runMigrations(db)
 
-	router.Use(gin.Logger() /* ,gin.Recovery()*/)
+	router := gin.New()
+	router.Use(gin.Logger(), gin.Recovery())
 	router.LoadHTMLFiles("templates/views/index.html")
 	router.Static("/js/", "./public/js")
 	router.Static("/css/", "./public/css")
@@ -55,7 +62,11 @@ func main() {
 	// kill -9 is syscall. SIGKILL but can"t be catch, so don't need add it
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-	log.Println("Shutdown Server ...")
+
+	log.Info("shuting down database...")
+	closeDb(db)
+
+	log.Info("Shutdown Server ...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -63,14 +74,32 @@ func main() {
 		log.Fatal("Server Shutdown: ", err)
 	}
 
-	log.Println("Server exiting")
+	log.Info("Server exiting")
 }
 
-func initDB(cfg *config.Configuration) {
-	err := postgres.InitDatabase("postgres", cfg.DBHost(), cfg.DBPort(), cfg.DBUser(), cfg.DBName(), cfg.DBPass())
+func initDB(cfg *config.Configuration) *gorm.DB {
+	db, err := postgres.InitDatabase(cfg.DBHost(), cfg.DBPort(), cfg.DBUser(), cfg.DBName(), cfg.DBPass())
 	if err != nil {
 		log.Fatalf("error initializing database: %s", err.Error())
 	}
 
-	log.Info("database created")
+	log.Info("database connection created")
+	return db
+}
+
+func runMigrations(db *gorm.DB) {
+	db.AutoMigrate(
+		&locations.Location{},
+		&isp.IspModel{},
+	)
+}
+
+func closeDb(db *gorm.DB) error {
+	if db != nil {
+		if err := db.Close(); err != nil {
+			log.Errorf("could not close db connection %s", err.Error())
+			return err
+		}
+	}
+	return nil
 }

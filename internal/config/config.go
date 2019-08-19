@@ -57,6 +57,7 @@ func (c *Configuration) InitLogger(debug bool) {
 	} else {
 		log.SetFormatter(&log.TextFormatter{
 			FullTimestamp: true,
+			ForceColors:   true,
 		})
 	}
 
