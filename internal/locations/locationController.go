@@ -6,26 +6,26 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/kr/pretty"
+	"github.com/timolinn/spestr/internal/config"
 	"googlemaps.github.io/maps"
 )
 
-func GetLocation(router *gin.Engine) {
+func GetLocation(router *gin.Engine, cfg *config.Configuration) {
 	router.GET("/location", func(c *gin.Context) {
-		coords, _ := getCoordinates()
+		coords, _ := getCoordinates(cfg.GoogleAPIKey())
 		c.String(http.StatusOK, coords)
 	})
 }
 
-func getCoordinates() (string, error) {
-
-	c, err := maps.NewClient(maps.WithAPIKey("api-key"))
+func getCoordinates(apiKey string) (string, error) {
+	c, err := maps.NewClient(maps.WithAPIKey(apiKey))
 	if err != nil {
 		panic(err)
 	}
 
 	r := &maps.LatLng{
-		Lat: 6.43055,
-		Lng: 3.41336,
+		Lat: 6.4474,
+		Lng: 3.3903,
 	}
 	// r := &maps.PlaceDetailsRequest{
 	// 	Fields: []maps.PlaceDetailsFieldMask{

@@ -9,11 +9,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/timolinn/spestr/internal/config"
+
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
 	router := gin.New()
+	config := config.New()
 
 	router.Use(gin.Logger() /* ,gin.Recovery()*/)
 	router.LoadHTMLFiles("templates/views/index.html")
@@ -21,7 +24,7 @@ func main() {
 	router.Static("/css/", "./public/css")
 	router.Static("/img/", "./public/images")
 
-	registerRoutes(router)
+	registerRoutes(router, config)
 
 	srv := &http.Server{
 		Addr:    ":8080",

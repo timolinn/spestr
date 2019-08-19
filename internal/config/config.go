@@ -16,19 +16,17 @@ import (
 type Configuration struct {
 	Google struct {
 		APIKey string `yaml:"apiKey"`
-	} `yaml:"google"`
+	}
 	Token    string `yaml:"token"`
-	Postgres struct {
-		User     string `yaml:"user"`
-		Dbname   string `yaml:"dbname"`
-		Password string `yaml:"password"`
-		PORT     string `yaml:"port"`
-	} `yaml:"postgres"`
+	Postgres *PostgresConfig
 }
 
 // PostgresConfig is the database config
 type PostgresConfig struct {
-	DBName string
+	User     string `yaml:"user"`
+	Dbname   string `yaml:"dbname"`
+	Password string `yaml:"password"`
+	PORT     string `yaml:"port"`
 }
 
 // InitLogger configure the logger
@@ -46,7 +44,14 @@ func InitLogger(debug bool) {
 
 // New creates a new configuration
 func New() *Configuration {
-	return &Configuration{}
+	cfg := new(Configuration)
+	err := cfg.SetValuesFromFile("spestr.yml")
+	if err != nil {
+		log.Fatalln("Config file not found!")
+	}
+	fmt.Println(cfg.Postgres)
+	fmt.Println(cfg.Google)
+	return cfg
 }
 
 // SetValuesFromFile reads a yaml config file nad sets
