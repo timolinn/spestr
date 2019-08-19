@@ -8,9 +8,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
 	"github.com/timolinn/spestr/internal/config"
+	"github.com/timolinn/spestr/internal/platforms/postgres"
+
+	"github.com/gin-gonic/gin"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
+	log "github.com/sirupsen/logrus"
 )
 
 func main() {
@@ -21,6 +24,9 @@ func main() {
 	// set to true only when environment
 	// is in development
 	config.InitLogger(config.Environment == "development")
+
+	// Create database connection
+	initDB(config)
 
 	router.Use(gin.Logger() /* ,gin.Recovery()*/)
 	router.LoadHTMLFiles("templates/views/index.html")
@@ -58,4 +64,13 @@ func main() {
 	}
 
 	log.Println("Server exiting")
+}
+
+func initDB(cfg *config.Configuration) {
+	err := postgres.InitDatabase("postgres", cfg.DBHost(), cfg.DBPort(), cfg.DBUser(), cfg.DBName(), cfg.DBPass())
+	if err != nil {
+		log.Fatalf("error initializing database: %s", err.Error())
+	}
+
+	log.Info("database created")
 }
