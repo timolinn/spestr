@@ -9,6 +9,37 @@
 <body>
     <h2>Spest.</h2>
     <h4>Your internet download speed is {{ .fastCom.Network.Download }} Mbps</h4>
+    <section id="game">
+        <div id="texting">
+            <label for="browser">Browser</label>
+            <input type="text" id="browser"/>
+            <button id="send-button">Send</button>
+        </div>
+        <pre id="output"></pre>
+    </section>
+    </body>
+    <script type="application/javascript">
+
+        const sendTextButton = document.getElementById('send-button')
+        const winnerInput = document.getElementById('browser')
+        var output = document.getElementById("output");
+
+        if (window['WebSocket']) {
+            const conn = new WebSocket('ws://' + document.location.host + '/ws')
+            console.log(conn)
+
+            sendTextButton.onclick = event => {
+                conn.send(winnerInput.value)
+            }
+
+            conn.onmessage = e => {
+                console.log(e)
+                const p = document.createElement('p')
+                p.innerHTML = `Server: ${e.data}`
+                output.appendChild(p)
+            }
+        }
+    </script>
     <script src="/js/location.js"></script>
 </body>
 </html>
