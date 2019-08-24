@@ -15,7 +15,7 @@ const baseURL = "https://api.fast.com/"
 // only Download speed is supported at the moment
 type NetworkStatus struct {
 	Upload   int
-	Download int
+	Download int `json:"download"`
 	Latency  struct {
 		Loaded   int
 		Unloaded int
@@ -26,6 +26,7 @@ type NetworkStatus struct {
 // returned from fast.com
 type FastDotCom struct {
 	Network NetworkStatus
+	Done    bool
 }
 
 // RunSpeedTest interacts with fast.com to fetch
@@ -46,7 +47,7 @@ func (fdcm FastDotCom) RunSpeedTest(dataChannel chan int) (FastDotCom, error) {
 	var Mbps int
 	go func() {
 		for Kbps := range KbpsChan {
-			fmt.Printf("%.2f Kbps %.2f Mbps\n", Kbps, Kbps/1000)
+			// fmt.Printf("%.2f Kbps %.2f Mbps\n", Kbps, Kbps/1000)
 			Mbps = int(Kbps / 1000)
 			dataChannel <- Mbps
 		}
@@ -55,8 +56,10 @@ func (fdcm FastDotCom) RunSpeedTest(dataChannel chan int) (FastDotCom, error) {
 	err = fastCom.Measure(urls, KbpsChan)
 	util.CheckError(err, "Speed measurement failed")
 	fdcm.Network.Download = Mbps
+	dataChannel <- -1
 	time.Sleep(1 * time.Second)
 	close(dataChannel)
+	fmt.Println("Data channel closed")
 	return fdcm, nil
 }
 
