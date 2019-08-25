@@ -48,11 +48,13 @@ func (fdcm FastDotCom) RunSpeedTest(dataChannel chan int) (FastDotCom, error) {
 	go func() {
 		for Kbps := range KbpsChan {
 			// fmt.Printf("%.2f Kbps %.2f Mbps\n", Kbps, Kbps/1000)
-			Mbps = int(Kbps / 1000)
-			dataChannel <- Mbps
+			// Mbps = int(Kbps / 1000)
+			dataChannel <- int(Kbps)
 		}
 	}()
 
+	// TODO: Proper error reporting
+	//TODO return errors with context message for higher abstraction
 	err = fastCom.Measure(urls, KbpsChan)
 	util.CheckError(err, "Speed measurement failed")
 	fdcm.Network.Download = Mbps

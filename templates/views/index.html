@@ -9,8 +9,8 @@
 </head>
 
 <body>
-    <h2>Spest.</h2>
-    <h4>Running internet speed test...</h4>
+    <h2>Spestr.</h2>
+    <h4>Running internet download speed test...</h4>
     <section id="speed">
         <pre id="output"></pre>
     </section>
@@ -32,7 +32,11 @@
             const data = JSON.parse(e.data);
             console.log(data)
             if (data.Network.download >= 0) {
-                output.innerHTML = `${data.Network.download} Mbps`
+                if (data.Network.download > 1000) {
+                    output.innerHTML = `${(data.Network.download/1000).toFixed(2)} Mbps`
+                } else {
+                    output.innerHTML = `${data.Network.download} Kbps`
+                }
             }
             if (data.Done == true) {
                 final.innerHTML = `Your internet speed is ${output.innerHTML}`
