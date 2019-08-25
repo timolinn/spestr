@@ -30,6 +30,7 @@ func registerRoutes(router *gin.Engine, cfg *config.Configuration) {
 		go fastCom.RunSpeedTest(resultChan)
 		defer ws.Close()
 
+	loop:
 		for {
 			for result := range resultChan {
 				log.Printf("%d Mbps\n", result)
@@ -38,13 +39,18 @@ func registerRoutes(router *gin.Engine, cfg *config.Configuration) {
 				// computation is complete
 				if result < 0 {
 					fastCom.Done = true
+					err := ws.WriteJSON(fastCom)
+					if err != nil {
+						log.Errorf("Error sending message: %v", err.Error())
+					}
+					break loop
+				} else {
+					err := ws.WriteJSON(fastCom)
+					if err != nil {
+						log.Errorf("Error sending message: %v", err.Error())
+						break loop
+					}
 				}
-				err := ws.WriteJSON(fastCom)
-				if err != nil {
-					log.Errorf("Error sending message: %v", err.Error())
-					break
-				}
-
 			}
 		}
 	})
