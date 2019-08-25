@@ -33,7 +33,7 @@ func registerRoutes(router *gin.Engine, cfg *config.Configuration) {
 	loop:
 		for {
 			for result := range resultChan {
-				log.Printf("%d Mbps\n", result)
+				log.Printf("%d Kbps\n", result)
 				fastCom.Network.Download = result
 				// tells the browser that
 				// computation is complete
@@ -48,7 +48,7 @@ func registerRoutes(router *gin.Engine, cfg *config.Configuration) {
 					err := ws.WriteJSON(fastCom)
 					if err != nil {
 						log.Errorf("Error sending message: %v", err.Error())
-						break loop
+						break
 					}
 				}
 			}
