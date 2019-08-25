@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/ddo/go-fast"
-	"github.com/timolinn/spestr/internal/util"
+	log "github.com/sirupsen/logrus"
 )
 
 const baseURL = "https://api.fast.com/"
@@ -36,11 +36,17 @@ func (fdcm FastDotCom) RunSpeedTest(dataChannel chan int) (FastDotCom, error) {
 
 	// initialize
 	err := fastCom.Init()
-	util.CheckError(err, "failed to initialize fastCom")
+	if err != nil {
+		log.Errorf("Failed to initialize fastdotcom")
+		return fdcm, err
+	}
 
 	// get urls, typically 3 in number
 	urls, err := fastCom.GetUrls()
-	util.CheckError(err, "failed to get Urls")
+	if err != nil {
+		log.Errorf("Failed to get urls")
+		return fdcm, err
+	}
 
 	// measure in bits per second
 	KbpsChan := make(chan float64)
@@ -48,6 +54,7 @@ func (fdcm FastDotCom) RunSpeedTest(dataChannel chan int) (FastDotCom, error) {
 	go func() {
 		for Kbps := range KbpsChan {
 			// fmt.Printf("%.2f Kbps %.2f Mbps\n", Kbps, Kbps/1000)
+			// fmt.Println(KbpsChan)
 			// Mbps = int(Kbps / 1000)
 			dataChannel <- int(Kbps)
 		}
@@ -56,23 +63,15 @@ func (fdcm FastDotCom) RunSpeedTest(dataChannel chan int) (FastDotCom, error) {
 	// TODO: Proper error reporting
 	//TODO return errors with context message for higher abstraction
 	err = fastCom.Measure(urls, KbpsChan)
-	util.CheckError(err, "Speed measurement failed")
+	if err != nil {
+		log.Errorf("Speed measurement failed: %v", err.Error())
+		return fdcm, err
+	}
+
 	fdcm.Network.Download = Mbps
-	dataChannel <- -1
+	dataChannel <- -1 // Done
 	time.Sleep(1 * time.Second)
 	close(dataChannel)
 	fmt.Println("Data channel closed")
 	return fdcm, nil
 }
-
-// func main() {
-// 	start := time.Now()
-// 	// runtime.GOMAXPROCS(4)
-// 	fastCom := FastDotCom{}
-// 	dataChannel := make(chan int64)
-// 	fastCom, err := fastCom.RunSpeedTest(dataChannel)
-// 	util.CheckError(err, "Speed test failed")
-
-// 	fmt.Printf("Your internet download speed in bits per second is %d Mbps\n ", fastCom.Network.Download)
-// 	fmt.Println(time.Since(start))
-// }

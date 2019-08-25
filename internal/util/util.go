@@ -3,13 +3,13 @@ package util
 import (
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net"
 	"net/http"
 	"os"
 
 	"github.com/kr/pretty"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 func CheckError(err error, context string) {
