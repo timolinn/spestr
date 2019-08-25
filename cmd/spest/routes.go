@@ -20,14 +20,16 @@ func registerRoutes(router *gin.Engine, cfg *config.Configuration) {
 	router.GET("/ws", func(c *gin.Context) {
 		ws, err := util.Upgrader.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {
-			log.Errorf("Error connecting to Websocket: %s\n", err)
+			log.Errorf("Error creating websocket connection: %s\n", err)
 		}
 
 		fastCom := fastdotcom.FastDotCom{
 			Done: false,
 		}
 		resultChan := make(chan int)
-		go fastCom.RunSpeedTest(resultChan)
+		go func() {
+			fastCom.RunSpeedTest(resultChan)
+		}()
 		defer ws.Close()
 
 	loop:
@@ -42,13 +44,15 @@ func registerRoutes(router *gin.Engine, cfg *config.Configuration) {
 					err := ws.WriteJSON(fastCom)
 					if err != nil {
 						log.Errorf("Error sending message: %v", err.Error())
+						ws.Close()
 					}
 					break loop
 				} else {
 					err := ws.WriteJSON(fastCom)
 					if err != nil {
 						log.Errorf("Error sending message: %v", err.Error())
-						break
+						ws.Close()
+						break loop
 					}
 				}
 			}

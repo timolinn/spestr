@@ -28,6 +28,12 @@
         const conn = new WebSocket('ws://' + document.location.host + '/ws')
         console.log(conn)
 
+        window.onbeforeunload = () => {
+            conn.onclose = () => {}; // disable onclose handler first
+            console.log("Connection closed")
+            conn.close();
+        };
+
         conn.onmessage = e => {
             const data = JSON.parse(e.data);
             console.log(data)
