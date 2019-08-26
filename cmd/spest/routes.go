@@ -41,6 +41,7 @@ func registerRoutes(router *gin.Engine, cfg *config.Configuration) {
 				// computation is complete
 				if result < 0 {
 					fastCom.Done = true
+					fastCom.IspInfo, _ = util.FetchISPInfo()
 					err := ws.WriteJSON(fastCom)
 					if err != nil {
 						log.Errorf("Error sending message: %v", err.Error())

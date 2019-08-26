@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/kr/pretty"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -43,7 +42,6 @@ func FetchISPInfo() (IPData, error) {
 
 	s := new(IPData)
 	json.Unmarshal(r, &s)
-	pretty.Println(s)
 
 	return *s, nil
 }

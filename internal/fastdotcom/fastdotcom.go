@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/timolinn/spestr/internal/util"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/timolinn/go-fast"
 )
@@ -27,6 +29,7 @@ type NetworkStatus struct {
 type FastDotCom struct {
 	Network NetworkStatus
 	Done    bool
+	IspInfo util.IPData `json:"ispInfo"`
 }
 
 // RunSpeedTest interacts with fast.com to fetch

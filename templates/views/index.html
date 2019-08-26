@@ -18,11 +18,15 @@
         <h1>
             <pre id="final"></pre>
         </h1>
+        <pre>
+            <ul id="metadata"></ul>
+        </pre>
     </section>
 </body>
 <script type="application/javascript">
     const output = document.getElementById("output");
     const final = document.getElementById("final");
+    const metadata = document.getElementById("metadata");
 
     if (window['WebSocket']) {
         const conn = new WebSocket('ws://' + document.location.host + '/ws')
@@ -47,6 +51,12 @@
             if (data.Done == true) {
                 final.innerHTML = `Your internet speed is ${output.innerHTML}`
                 output.innerHTML = ``
+                for (const info in data.ispInfo) {
+                    if (info == 'lat' || info == 'lon') continue;
+                    const li = document.createElement("li");
+                    li.innerHTML = `${info}: ${data.ispInfo[info]}`
+                    metadata.appendChild(li)
+                }
             }
         }
     }
