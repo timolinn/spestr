@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ddo/go-fast"
 	log "github.com/sirupsen/logrus"
+	"github.com/timolinn/go-fast"
 )
 
 const baseURL = "https://api.fast.com/"
