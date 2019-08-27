@@ -23,13 +23,14 @@
         </pre>
     </section>
 </body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.js"></script>
 <script type="application/javascript">
     const output = document.getElementById("output");
     const final = document.getElementById("final");
     const metadata = document.getElementById("metadata");
 
     if (window['WebSocket']) {
-        const conn = new WebSocket('ws://' + document.location.host + '/ws')
+        const conn = io('ws://' + document.location.host + '/socket.io/')
         console.log(conn)
 
         window.onbeforeunload = () => {
