@@ -23,45 +23,41 @@
         </pre>
     </section>
 </body>
+<script src="/js/location.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.js"></script>
 <script type="application/javascript">
     const output = document.getElementById("output");
     const final = document.getElementById("final");
     const metadata = document.getElementById("metadata");
 
-    if (window['WebSocket']) {
-        const conn = new WebSocket('ws://' + document.location.host + '/ws')
-        console.log(conn)
-
-        window.onbeforeunload = () => {
-            conn.onclose = () => {}; // disable onclose handler first
-            console.log("Connection closed")
-            conn.close();
-        };
-
-        conn.onmessage = e => {
-            const data = JSON.parse(e.data);
-            console.log(data)
-            if (data.Network.download >= 0) {
-                if (data.Network.download > 1000) {
-                    output.innerHTML = `${(data.Network.download/1000).toFixed(2)} Mbps`
-                } else {
-                    output.innerHTML = `${data.Network.download} Kbps`
-                }
-            }
-            if (data.Done == true) {
-                final.innerHTML = `Your internet speed is ${output.innerHTML}`
-                output.innerHTML = ``
-                for (const info in data.ispInfo) {
-                    if (info == 'lat' || info == 'lon') continue;
-                    const li = document.createElement("li");
-                    li.innerHTML = `${info}: ${data.ispInfo[info]}`
-                    metadata.appendChild(li)
-                }
+    const URL = 'ws://' + document.location.host + '/socket.io/';
+    const conn = io()
+    conn.on("test result", function (data) {
+        console.log(data)
+        if (data.Network.download >= 0) {
+            if (data.Network.download > 1000) {
+                output.innerHTML = `${(data.Network.download/1000).toFixed(2)} Mbps`
+            } else {
+                output.innerHTML = `${data.Network.download} Kbps`
             }
         }
-    }
+        if (data.Done == true) {
+            final.innerHTML = `Your internet speed is ${output.innerHTML}`
+            output.innerHTML = ``
+            for (const info in data.ispInfo) {
+                if (info == 'lat' || info == 'lon') continue;
+                const li = document.createElement("li");
+                li.innerHTML = `${info}: ${data.ispInfo[info]}`
+                metadata.appendChild(li)
+            }
+        }
+    })
+    window.onbeforeunload = () => {
+        conn.onclose = () => {}; // disable onclose handler first
+        console.log("Connection closed")
+        conn.close();
+    };
 </script>
-<script src="/js/location.js"></script>
 </body>
 
 </html>

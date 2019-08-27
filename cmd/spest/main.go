@@ -8,6 +8,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/timolinn/spestr/internal/util"
+
 	"github.com/timolinn/spestr/internal/config"
 	"github.com/timolinn/spestr/internal/home"
 	"github.com/timolinn/spestr/internal/isp"
@@ -15,10 +17,13 @@ import (
 	"github.com/timolinn/spestr/internal/platforms/postgres"
 
 	"github.com/gin-gonic/gin"
+	// socketio "github.com/googollee/go-socket.io"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	log "github.com/sirupsen/logrus"
 )
+
+// var wsServer *socketio.Server
 
 func main() {
 	config := config.New()
@@ -41,6 +46,10 @@ func main() {
 	router.Static("/img/", "./public/images")
 
 	registerRoutes(router, config)
+
+	// Start websocket server and register route
+	wsServer := util.StartWebSocketServer()
+	registerWebSocketRoutes(router, wsServer)
 
 	srv := &http.Server{
 		Addr:    ":8080",
