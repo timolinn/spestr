@@ -1,0 +1,12 @@
+database:
+  dialect: postgres
+  postgres:
+    host: localhost
+    user: root
+    dbname: root
+    password:
+    port: 5432
+environment: development
+logs: app.log
+google:
+  apiKey: google-api-key
