@@ -21,32 +21,61 @@ func registerRoutes(router *gin.Engine, cfg *config.Configuration) {
 func registerWebSocketRoutes(router *gin.Engine, wsServer *socketio.Server) {
 	router.GET("/socket.io/", func(c *gin.Context) {
 		wsServer.ServeHTTP(c.Writer, c.Request)
+
+		var coord locations.Coordinates
+		var connectionEffectiveType string
+
+		resultChan := make(chan int)
+		fastCom := fastdotcom.FastDotCom{
+			Done: false,
+		}
+
+		go func() {
+			fastCom.RunSpeedTest(resultChan)
+		}()
+
+		wsServer.On("position", func(position locations.Coordinates) {
+			log.Info("[socketio]: Postion: ", position)
+			coord = position
+		})
+
+		wsServer.On("network type", func(ntype string) {
+			log.Info("[socketio]: Network Type: ", ntype)
+			connectionEffectiveType = ntype
+			log.Info(coord.Coords)
+			go func(fastCom fastdotcom.FastDotCom, coord locations.Coordinates, connType string) {
+				defer func() {
+					if err := recover(); err != nil {
+						log.Error("goroutine paniced during saving. User likely denied location access")
+						log.Error(err)
+					}
+				}()
+				home.SaveNetworkData(fastCom, fastCom.IspInfo, coord, connType)
+			}(fastCom, coord, connectionEffectiveType)
+		})
+
 		wsServer.On("connection", func(s socketio.Socket) {
-			log.Info("[socketio]: WS Connected.")
-			resultChan := make(chan int)
-			fastCom := fastdotcom.FastDotCom{
-				Done: false,
-			}
-			go func() {
-				fastCom.RunSpeedTest(resultChan)
-			}()
 		loop:
 			for {
 				for result := range resultChan {
 					log.Printf("%d Kbps\n", result)
-					fastCom.Network.Download = result
 					// tells the browser that
 					// computation is complete
 					if result < 0 {
-						fastCom.Done = true
 						fastCom.IspInfo, _ = util.FetchISPInfo()
+						fastCom.Done = true
 						s.Emit("test result", fastCom)
 						break loop
 					} else {
+						fastCom.Network.Download = result
 						s.Emit("test result", fastCom)
 					}
 				}
 			}
 		})
+	})
+
+	router.POST("/socket.io/", func(c *gin.Context) {
+		log.Info("[HTTPPOST]: Ping")
 	})
 }

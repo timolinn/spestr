@@ -34,11 +34,15 @@ type IPData struct {
 
 func FetchISPInfo() (IPData, error) {
 	result, err := http.Get("http://ip-api.com/json")
-	CheckError(err, "Failed to fetch data")
+	if err != nil {
+		log.Error(errors.Wrap(err, "unable to access http://ip-api.com/json at the moment"))
+	}
 	defer result.Body.Close()
 
 	r, err := ioutil.ReadAll(result.Body)
-	CheckError(err, "Failed to read stream")
+	if err != nil {
+		log.Error(errors.Wrap(err, "failed to read body"))
+	}
 
 	s := new(IPData)
 	json.Unmarshal(r, &s)
@@ -69,4 +73,14 @@ func Exists(filename string) bool {
 	info, err := os.Stat(filename)
 
 	return err == nil && !info.IsDir()
+}
+
+// Contains checks if a string value exists in an array of strings
+func Contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
 }

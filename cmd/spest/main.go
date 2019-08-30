@@ -17,13 +17,10 @@ import (
 	"github.com/timolinn/spestr/internal/platforms/postgres"
 
 	"github.com/gin-gonic/gin"
-	// socketio "github.com/googollee/go-socket.io"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	log "github.com/sirupsen/logrus"
 )
-
-// var wsServer *socketio.Server
 
 func main() {
 	config := config.New()
@@ -35,8 +32,9 @@ func main() {
 
 	// Create database connection
 	db := initDB(config)
+	defer db.Close()
 	// Migrate database
-	runMigrations(db)
+	runMigrations()
 
 	router := gin.New()
 	router.Use(gin.Logger(), gin.Recovery())
@@ -71,9 +69,6 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	log.Info("closing database connection ...")
-	closeDb(db)
-
 	log.Info("Shutdown Server ...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -95,17 +90,18 @@ func initDB(cfg *config.Configuration) *gorm.DB {
 	return db
 }
 
-func runMigrations(db *gorm.DB) {
-	db.AutoMigrate(
+func runMigrations() {
+	log.Info("running migrations...")
+	postgres.DB.AutoMigrate(
 		&locations.Location{},
 		&isp.IspModel{},
 		&home.NetworkModel{},
 	)
 }
 
-func closeDb(db *gorm.DB) error {
-	if db != nil {
-		if err := db.Close(); err != nil {
+func closeDb() error {
+	if postgres.DB != nil {
+		if err := postgres.DB.Close(); err != nil {
 			log.Errorf("could not close db connection %s", err.Error())
 			return err
 		}

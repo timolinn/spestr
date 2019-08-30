@@ -23,15 +23,49 @@
         </pre>
     </section>
 </body>
-<script src="/js/location.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.1.1/socket.io.js"></script>
+<!-- <script src="/js/location.js"></script> -->
 <script type="application/javascript">
+    // Get user location
+
+    const handleError = (err) => {
+        console.log(err.PERMISSION_DENIED)
+        if (err.PERMISSION_DENIED) {
+            console.log("Permission was denied");
+            console.log(err.message);
+            return;
+        }
+        console.log(err.message);
+    }
+
     const output = document.getElementById("output");
     const final = document.getElementById("final");
     const metadata = document.getElementById("metadata");
 
     const URL = 'ws://' + document.location.host + '/socket.io/';
     const conn = io()
+    conn.on("connect", function (e) {
+        console.log("connected")
+        if (navigator.geolocation) {
+            const options = {
+                enableHighAccuracy: true,
+                timeout: 50000,
+                maximumAge: 0
+            };
+            navigator.geolocation.getCurrentPosition(function (pos) {
+                console.log(pos)
+                // for some reason go doesn't accept the raw `pos` object
+                conn.emit("position", {
+                    coords: {
+                        accuracy: pos.coords.accuracy,
+                        latitude: pos.coords.latitude,
+                        longitude: pos.coords.longitude,
+                    },
+                    timestamp: pos.timestamp,
+                });
+            }, handleError)
+        }
+    })
     conn.on("test result", function (data) {
         console.log(data)
         if (data.Network.download >= 0) {
@@ -42,6 +76,8 @@
             }
         }
         if (data.Done == true) {
+            // send network effectiveType (2g/3g/4g)
+            conn.emit("network type", navigator.connection.effectiveType)
             final.innerHTML = `Your internet speed is ${output.innerHTML}`
             output.innerHTML = ``
             for (const info in data.ispInfo) {
@@ -50,8 +86,11 @@
                 li.innerHTML = `${info}: ${data.ispInfo[info]}`
                 metadata.appendChild(li)
             }
+            conn.close();
+            console.log("connection closed");
         }
     })
+    // closes socket connection when user refreshes
     window.onbeforeunload = () => {
         conn.onclose = () => {}; // disable onclose handler first
         console.log("Connection closed")
