@@ -49,8 +49,12 @@ func main() {
 	wsServer := util.StartWebSocketServer()
 	registerWebSocketRoutes(router, wsServer)
 
+	var serverPort string
+	if serverPort := os.Getenv("SERVER_PORT"); serverPort == "" {
+		serverPort = "8080"
+	}
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":" + serverPort,
 		Handler: router,
 	}
 
