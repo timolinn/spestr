@@ -58,6 +58,7 @@ func main() {
 		Handler: router,
 	}
 
+	log.Info("Started server on port: " + serverPort)
 	go func() {
 		// service connections
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
