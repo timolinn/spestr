@@ -46,7 +46,7 @@ func SaveNetworkData(fst fastdotcom.FastDotCom, ipdata util.IPData, coords locat
 		ConnectionType: connType,
 	}
 
-	postgres.DB.FirstOrCreate(&ispm, isp.IspModel{Name: ipdata.Isp})
+	postgres.DB.FirstOrCreate(&ispm, isp.IspModel{Name: ipdata.Isp, ConnectionType: connType})
 
 	loc := new(locations.Location)
 	loc.Prepare(coords)

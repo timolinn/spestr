@@ -76,7 +76,7 @@ func (fdcm FastDotCom) RunSpeedTest(dataChannel chan int) (FastDotCom, error) {
 	}
 
 	fdcm.Network.Download = Mbps
-	dataChannel <- -1 // Done
+	dataChannel <- util.OK_SPEED_TEST_COMPLETE // Done
 	time.Sleep(1 * time.Second)
 	fmt.Println("Data channel closed")
 	return fdcm, nil
