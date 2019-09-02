@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"strconv"
 
 	"gopkg.in/yaml.v2"
 
@@ -71,8 +72,12 @@ func (c *Configuration) InitLogger(debug bool) {
 // New creates a new *Configuration
 func New() *Configuration {
 	cfg := new(Configuration)
-	// TODO: select config file based on environment
+
 	err := cfg.SetValuesFromFile("spestr.yml")
+	if err != nil && os.Getenv("APP_ENV") == "heroku" {
+		err = cfg.SetValuesFromFile("sample.spestr.yml")
+	}
+
 	if err != nil {
 		log.Fatalf("Loading configuration file failed: %s", err.Error())
 	}
@@ -95,35 +100,57 @@ func (c *Configuration) SetValuesFromFile(fileName string) error {
 
 // GoogleAPIKey gets the google maps apikey
 func (c *Configuration) GoogleAPIKey() string {
+	if key := os.Getenv("GOOGLE_API_KEY"); key != "" {
+		return key
+	}
 	return c.Google.APIKey
 }
 
 // Dialect returns the database driver name
 func (c *Configuration) Dialect() string {
+	if driver := os.Getenv("DB_DRIVER"); driver != "" {
+		return driver
+	}
 	return c.Database.Driver
 }
 
 // DBHost returns database Host, "localhost" by default
 func (c *Configuration) DBHost() string {
+	if host := os.Getenv("DB_HOST"); host != "" {
+		return host
+	}
 	return c.Database.Postgres.Host
 }
 
 // DBPort returns database Port
 func (c *Configuration) DBPort() int {
+	if port := os.Getenv("DB_PORT"); port != "" {
+		port, _ := strconv.Atoi(port)
+		return port
+	}
 	return c.Database.Postgres.PORT
 }
 
 // DBName returns database name
 func (c *Configuration) DBName() string {
+	if DBName := os.Getenv("DB_NAME"); DBName != "" {
+		return DBName
+	}
 	return c.Database.Postgres.Dbname
 }
 
 // DBUser returns database User
 func (c *Configuration) DBUser() string {
+	if DBUser := os.Getenv("DB_USER"); DBUser != "" {
+		return DBUser
+	}
 	return c.Database.Postgres.User
 }
 
 // DBPass returns database Password
 func (c *Configuration) DBPass() string {
+	if DBPass := os.Getenv("DB_PASS"); DBPass != "" {
+		return DBPass
+	}
 	return c.Database.Postgres.Password
 }
