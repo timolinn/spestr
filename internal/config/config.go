@@ -41,6 +41,9 @@ type PostgresConfig struct {
 
 // InitLogger configures the logger
 func (c *Configuration) InitLogger(debug bool) {
+	if os.Getenv("APP_ENV") == "heroku" {
+		return
+	}
 	logFile := logPath + c.Logs
 
 	// open log file for read and write
