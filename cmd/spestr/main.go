@@ -50,7 +50,7 @@ func main() {
 	registerWebSocketRoutes(router, wsServer)
 
 	var serverPort string
-	if serverPort := os.Getenv("SERVER_PORT"); serverPort == "" {
+	if serverPort = os.Getenv("PORT"); serverPort == "" {
 		serverPort = "8080"
 	}
 	srv := &http.Server{
