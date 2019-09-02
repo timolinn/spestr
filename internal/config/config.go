@@ -46,7 +46,7 @@ func (c *Configuration) InitLogger(debug bool) {
 	// open log file for read and write
 	file, err := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		log.Fatalf("Unable to open %s: failed with %s\n", logFile, err)
+		log.Errorf("Unable to open %s: failed with %s\n", logFile, err)
 	}
 
 	// use multiwriter to enable both file and stdout logs
