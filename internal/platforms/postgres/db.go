@@ -12,8 +12,8 @@ import (
 var DB *gorm.DB
 var once sync.Once
 
-// ConnectToDatabase initializes the DB
-func ConnectToDatabase(dialect, host string, port int, user, dbname, pass string) (*gorm.DB, error) {
+// Connect initializes the DB
+func Connect(dialect, host string, port int, user, dbname, pass string) (*gorm.DB, error) {
 	log.Info("initializing database...")
 	var url string
 	if databaseURL := os.Getenv("DATABASE_URL"); databaseURL != "" {

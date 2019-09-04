@@ -53,6 +53,7 @@ func (fdcm FastDotCom) RunSpeedTest(dataChannel chan int) (FastDotCom, error) {
 		dataChannel <- util.ERROR_FAILED_TO_GET_URL
 		return fdcm, err
 	}
+	fmt.Println(urls)
 
 	// measure in bits per second
 	KbpsChan := make(chan float64)

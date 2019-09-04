@@ -10,7 +10,7 @@ Works like fast.com, actually it's literally fast.com but persist internet speed
 
 ## Usage
 
-Demo: [spestr.herokuapp.com](https://spestr.herokuapp.com)
+<!-- Demo: [spestr.herokuapp.com](https://spestr.herokuapp.com) -->
 
 ## Run locally
 

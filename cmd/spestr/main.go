@@ -86,7 +86,7 @@ func main() {
 }
 
 func initDB(cfg *config.Configuration) *gorm.DB {
-	db, err := postgres.ConnectToDatabase(cfg.Dialect(), cfg.DBHost(), cfg.DBPort(), cfg.DBUser(), cfg.DBName(), cfg.DBPass())
+	db, err := postgres.Connect(cfg.Dialect(), cfg.DBHost(), cfg.DBPort(), cfg.DBUser(), cfg.DBName(), cfg.DBPass())
 	if err != nil {
 		log.Fatalf("error initializing database: %s", err.Error())
 	}
