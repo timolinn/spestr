@@ -20,6 +20,7 @@ func registerRoutes(router *gin.Engine, cfg *config.Configuration) {
 
 func registerWebSocketRoutes(router *gin.Engine, wsServer *socketio.Server) {
 	router.GET("/socket.io/", func(c *gin.Context) {
+
 		wsServer.ServeHTTP(c.Writer, c.Request)
 
 		var coord locations.Coordinates
@@ -53,25 +54,40 @@ func registerWebSocketRoutes(router *gin.Engine, wsServer *socketio.Server) {
 				home.SaveNetworkData(fastCom, fastCom.IspInfo, coord, connType)
 			}(fastCom, coord, connectionEffectiveType)
 		})
+		var done = make(chan bool, 1)
 
 		wsServer.On("connection", func(s socketio.Socket) {
-		loop:
-			for {
-				for result := range resultChan {
-					log.Printf("%d Kbps\n", result)
-					// tells the browser that
-					// computation is complete
-					if result < 0 {
-						fastCom.IspInfo, _ = util.FetchISPInfo()
-						fastCom.Done = true
-						s.Emit("test result", fastCom)
-						break loop
-					} else {
-						fastCom.Network.Download = result
-						s.Emit("test result", fastCom)
+			s.On("disconnected", func() {
+				done <- true
+				log.Info("connection closed now...")
+				// close(resultChan)
+			})
+			go func(done <-chan bool) {
+			loop:
+				for {
+					for result := range resultChan {
+						select {
+						case <-done:
+							log.Info("Done!! Breaking looop>>>>>>>>>>>>>>>>>>>>")
+							break loop
+						default:
+							log.Printf("%d Kbps\n", result)
+							// tells the browser that
+							// computation is complete
+							if result < 0 {
+								fastCom.IspInfo, _ = util.FetchISPInfo(c.Request)
+								fastCom.Done = true
+								s.Emit("test result", fastCom)
+								break loop
+							} else {
+								fastCom.Network.Download = result
+								s.Emit("test result", fastCom)
+							}
+						}
 					}
+
 				}
-			}
+			}(done)
 		})
 	})
 

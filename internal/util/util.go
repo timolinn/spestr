@@ -2,6 +2,7 @@ package util
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -32,8 +33,13 @@ type IPData struct {
 	Lon         int    `json:"lon"`
 }
 
-func FetchISPInfo() (IPData, error) {
-	result, err := http.Get("http://ip-api.com/json")
+func FetchISPInfo(req *http.Request) (IPData, error) {
+	userIP, err := fromRequest(req)
+	if err != nil {
+		panic(err.Error())
+	}
+	log.Info((userIP))
+	result, err := http.Get("http://ip-api.com/json/" + string(userIP))
 	if err != nil {
 		log.Error(errors.Wrap(err, "unable to access http://ip-api.com/json at the moment"))
 	}
@@ -83,4 +89,18 @@ func Contains(s []string, e string) bool {
 		}
 	}
 	return false
+}
+
+// FromRequest extracts the user IP address from req, if present.
+func fromRequest(req *http.Request) (net.IP, error) {
+	ip, _, err := net.SplitHostPort(req.RemoteAddr)
+	if err != nil {
+		return nil, fmt.Errorf("userip: %q is not IP:port", req.RemoteAddr)
+	}
+
+	userIP := net.ParseIP(ip)
+	if userIP == nil {
+		return nil, fmt.Errorf("userip: %q is not IP:port", req.RemoteAddr)
+	}
+	return userIP, nil
 }

@@ -92,6 +92,7 @@
     })
     // closes socket connection when user refreshes
     window.onbeforeunload = () => {
+        conn.emit("disconnected", "closed")
         conn.onclose = () => {}; // disable onclose handler first
         console.log("Connection closed")
         conn.close();
