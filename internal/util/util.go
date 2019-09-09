@@ -34,12 +34,12 @@ type IPData struct {
 }
 
 func FetchISPInfo(req *http.Request) (IPData, error) {
-	userIP, err := fromRequest(req)
+	userIP, err := GetIPAddr()
 	if err != nil {
 		panic(err.Error())
 	}
 	log.Info((userIP))
-	result, err := http.Get("http://ip-api.com/json/" + userIP.String())
+	result, err := http.Get("http://ip-api.com/json")
 	if err != nil {
 		log.Error(errors.Wrap(err, "unable to access http://ip-api.com/json at the moment"))
 	}
