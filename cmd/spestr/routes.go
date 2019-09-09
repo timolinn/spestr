@@ -38,29 +38,35 @@ func registerWebSocketRoutes(router *gin.Engine, wsServer *socketio.Server) {
 		wsServer.On("position", func(position locations.Coordinates) {
 			log.Info("[socketio]: Postion: ", position)
 			coord = position
+			log.Info(coord.Coords)
 		})
 
 		wsServer.On("network type", func(ntype string) {
 			log.Info("[socketio]: Network Type: ", ntype)
 			connectionEffectiveType = ntype
-			log.Info(coord.Coords)
+
+			// save test data
 			go func(fastCom fastdotcom.FastDotCom, coord locations.Coordinates, connType string) {
 				defer func() {
 					if err := recover(); err != nil {
-						log.Error("goroutine paniced during saving. User likely denied location access")
+						log.Error("goroutine paniced during saving.")
 						log.Error(err)
 					}
 				}()
+
+				if coord.Coords.Latitude == 0 || coord.Coords.Longitude == 0 {
+					return
+				}
 				home.SaveNetworkData(fastCom, fastCom.IspInfo, coord, connType)
 			}(fastCom, coord, connectionEffectiveType)
 		})
+
 		var done = make(chan bool, 1)
 
 		wsServer.On("connection", func(s socketio.Socket) {
 			s.On("disconnected", func() {
 				done <- true
-				log.Info("connection closed now...")
-				// close(resultChan)
+				log.Info("[socketio]: socket disconnected...")
 			})
 			go func(done <-chan bool) {
 			loop:
@@ -68,7 +74,7 @@ func registerWebSocketRoutes(router *gin.Engine, wsServer *socketio.Server) {
 					for result := range resultChan {
 						select {
 						case <-done:
-							log.Info("Done!! Breaking looop>>>>>>>>>>>>>>>>>>>>")
+							log.Info("Done!! Breaking looop >>>>>>>>>>>>>>>>>>>>")
 							break loop
 						default:
 							log.Printf("%d Kbps\n", result)
@@ -85,7 +91,6 @@ func registerWebSocketRoutes(router *gin.Engine, wsServer *socketio.Server) {
 							}
 						}
 					}
-
 				}
 			}(done)
 		})

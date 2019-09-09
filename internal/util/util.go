@@ -39,7 +39,7 @@ func FetchISPInfo(req *http.Request) (IPData, error) {
 		panic(err.Error())
 	}
 	log.Info((userIP))
-	result, err := http.Get("http://ip-api.com/json/" + string(userIP))
+	result, err := http.Get("http://ip-api.com/json/" + userIP.String())
 	if err != nil {
 		log.Error(errors.Wrap(err, "unable to access http://ip-api.com/json at the moment"))
 	}
