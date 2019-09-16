@@ -5,7 +5,10 @@ import (
 	"strconv"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+	"github.com/timolinn/spestr/internal/config"
 	"github.com/timolinn/spestr/internal/platforms/postgres"
+	"googlemaps.github.io/maps"
 
 	"github.com/timolinn/spestr/internal/util"
 
@@ -46,11 +49,14 @@ func SaveNetworkData(fst fastdotcom.FastDotCom, ipdata util.IPData, coords locat
 		ConnectionType: connType,
 	}
 
-	postgres.DB.FirstOrCreate(&ispm, isp.IspModel{Name: ipdata.Isp, ConnectionType: connType})
-
 	loc := new(locations.Location)
-	loc.Prepare(coords)
-	postgres.DB.Create(&loc)
+
+	c, err := maps.NewClient(maps.WithAPIKey(config.New().GoogleAPIKey()))
+	if err != nil {
+		log.Error("Error initializing google map client")
+	}
+
+	loc.Prepare(coords, c)
 
 	nm := NetworkModel{
 		DownloadSpeed:   fst.Network.Download,
@@ -61,7 +67,8 @@ func SaveNetworkData(fst fastdotcom.FastDotCom, ipdata util.IPData, coords locat
 		Location:        *loc,
 	}
 
+	postgres.DB.FirstOrCreate(&ispm, isp.IspModel{Name: ipdata.Isp, ConnectionType: connType})
+	postgres.DB.Create(&loc)
 	postgres.DB.Create(&nm)
 	fmt.Println(ispm, nm)
-
 }

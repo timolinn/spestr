@@ -61,7 +61,7 @@ func (fdcm FastDotCom) RunSpeedTest(dataChannel chan int) (FastDotCom, error) {
 		for Kbps := range KbpsChan {
 			// fmt.Printf("%.2f Kbps %.2f Mbps\n", Kbps, Kbps/1000)
 			// fmt.Println(KbpsChan)
-			// Mbps = int(Kbps / 1000)
+			Mbps = int(Kbps)
 			dataChannel <- int(Kbps)
 		}
 	}()

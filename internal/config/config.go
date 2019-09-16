@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/joho/godotenv"
 	"gopkg.in/yaml.v2"
 
 	log "github.com/sirupsen/logrus"
@@ -14,6 +15,7 @@ import (
 )
 
 var logPath = "public/logs/"
+var configFile string
 
 // Configuration is the general application
 // configuration settings
@@ -74,9 +76,20 @@ func (c *Configuration) InitLogger(debug bool) {
 
 // New creates a new *Configuration
 func New() *Configuration {
-	cfg := new(Configuration)
+	err := godotenv.Load()
+	if err != nil {
+		if os.Getenv("APP_ENV") == "test" {
+			// hard code absolute path to config file
+			configFile = "/Users/timothyonyiuke/Documents/deark/Golang/spestr/spestr.yml"
+		} else {
+			log.Fatal("Error loading .env file")
+		}
+	} else {
+		configFile = os.Getenv("CONFIG_FILE")
+	}
 
-	err := cfg.SetValuesFromFile("spestr.yml")
+	cfg := new(Configuration)
+	err = cfg.SetValuesFromFile(configFile)
 	if err != nil && os.Getenv("APP_ENV") == "heroku" {
 		err = cfg.SetValuesFromFile("sample.spestr.yml")
 	}
@@ -89,11 +102,11 @@ func New() *Configuration {
 
 // SetValuesFromFile reads a yaml config file nad sets
 // the values to the config setting
-func (c *Configuration) SetValuesFromFile(fileName string) error {
-	if !util.Exists(fileName) {
-		return fmt.Errorf("config file not found: \"%s\"", fileName)
+func (c *Configuration) SetValuesFromFile(filePath string) error {
+	if !util.Exists(filePath) {
+		return fmt.Errorf("config file not found: \"%s\"", filePath)
 	}
-	yamlConfig, err := ioutil.ReadFile(fileName)
+	yamlConfig, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return err
 	}

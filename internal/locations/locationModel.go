@@ -2,11 +2,9 @@ package locations
 
 import (
 	"context"
-	"fmt"
+	"strconv"
 	"time"
 
-	"github.com/kr/pretty"
-	"github.com/timolinn/spestr/internal/config"
 	"github.com/timolinn/spestr/internal/util"
 
 	"googlemaps.github.io/maps"
@@ -46,12 +44,7 @@ func (l Location) TableName() string {
 
 // Prepare populates Location data from google maps
 // API
-func (l *Location) Prepare(coord Coordinates) error {
-	c, err := maps.NewClient(maps.WithAPIKey(config.New().GoogleAPIKey()))
-	if err != nil {
-		return err
-	}
-
+func (l *Location) Prepare(coord Coordinates, c *maps.Client) error {
 	r := &maps.LatLng{
 		Lat: coord.Coords.Latitude,  //6.4474,6.6147419,3.3742382
 		Lng: coord.Coords.Longitude, //3.3903,
@@ -65,9 +58,7 @@ func (l *Location) Prepare(coord Coordinates) error {
 	if err != nil {
 		return err
 	}
-
 	addr := loc[0].AddressComponents
-	pretty.Println(addr)
 	l.City = get(addr, "locality")
 	l.Country = get(addr, "country")
 	l.LGA = get(addr, "administrative_area_level_2")
@@ -75,9 +66,8 @@ func (l *Location) Prepare(coord Coordinates) error {
 	l.Neighborhood = get(addr, "neighborhood")
 	l.FormattedAddress = loc[0].FormattedAddress
 	l.PlaceID = loc[0].PlaceID
-	l.Lat = fmt.Sprintf("%f", coord.Coords.Latitude)
-	l.Lon = fmt.Sprintf("%f", coord.Coords.Longitude)
-	// pretty.Println(l)
+	l.Lat = strconv.FormatFloat(coord.Coords.Latitude, 'f', -1, 64)
+	l.Lon = strconv.FormatFloat(coord.Coords.Longitude, 'f', -1, 64)
 	return nil
 }
 
