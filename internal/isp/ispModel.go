@@ -13,9 +13,9 @@ type IspModel struct {
 	City           string
 	Country        string
 	CountryCode    string
-	ID             uint `gorm:"primary_key"`
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	ID             uint       `gorm:"primary_key"`
+	CreatedAt      time.Time  `gorm:"default:CURRENT_TIMESTAMP"`
+	UpdatedAt      time.Time  `gorm:"default:CURRENT_TIMESTAMP"`
 	DeletedAt      *time.Time `sql:"index"`
 }
 

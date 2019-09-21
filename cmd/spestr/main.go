@@ -8,6 +8,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/timolinn/spestr/internal/util"
+
 	"github.com/timolinn/spestr/internal/config"
 	"github.com/timolinn/spestr/internal/home"
 	"github.com/timolinn/spestr/internal/isp"
@@ -30,8 +32,9 @@ func main() {
 
 	// Create database connection
 	db := initDB(config)
+	defer db.Close()
 	// Migrate database
-	runMigrations(db)
+	runMigrations()
 
 	router := gin.New()
 	router.Use(gin.Logger(), gin.Recovery())
@@ -42,11 +45,20 @@ func main() {
 
 	registerRoutes(router, config)
 
+	// Start websocket server and register route
+	wsServer := util.StartWebSocketServer()
+	registerWebSocketRoutes(router, wsServer)
+
+	var serverPort string
+	if serverPort = os.Getenv("PORT"); serverPort == "" {
+		serverPort = "8080"
+	}
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":" + serverPort,
 		Handler: router,
 	}
 
+	log.Info("Started server on port: " + serverPort)
 	go func() {
 		// service connections
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -62,9 +74,6 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	log.Info("closing database connection ...")
-	closeDb(db)
-
 	log.Info("Shutdown Server ...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -77,7 +86,7 @@ func main() {
 }
 
 func initDB(cfg *config.Configuration) *gorm.DB {
-	db, err := postgres.ConnectToDatabase(cfg.Dialect(), cfg.DBHost(), cfg.DBPort(), cfg.DBUser(), cfg.DBName(), cfg.DBPass())
+	db, err := postgres.Connect(cfg.Dialect(), cfg.DBHost(), cfg.DBPort(), cfg.DBUser(), cfg.DBName(), cfg.DBPass())
 	if err != nil {
 		log.Fatalf("error initializing database: %s", err.Error())
 	}
@@ -86,17 +95,18 @@ func initDB(cfg *config.Configuration) *gorm.DB {
 	return db
 }
 
-func runMigrations(db *gorm.DB) {
-	db.AutoMigrate(
+func runMigrations() {
+	log.Info("running migrations...")
+	postgres.DB.AutoMigrate(
 		&locations.Location{},
 		&isp.IspModel{},
 		&home.NetworkModel{},
 	)
 }
 
-func closeDb(db *gorm.DB) error {
-	if db != nil {
-		if err := db.Close(); err != nil {
+func closeDb() error {
+	if postgres.DB != nil {
+		if err := postgres.DB.Close(); err != nil {
 			log.Errorf("could not close db connection %s", err.Error())
 			return err
 		}

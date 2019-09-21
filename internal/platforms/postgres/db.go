@@ -2,22 +2,35 @@ package postgres
 
 import (
 	"fmt"
+	"os"
+	"sync"
 
 	"github.com/jinzhu/gorm"
 	log "github.com/sirupsen/logrus"
 )
 
-// ConnectToDatabase initializes the DB
-func ConnectToDatabase(dialect, host string, port int, user, dbname, pass string) (*gorm.DB, error) {
+var DB *gorm.DB
+var once sync.Once
+
+// Connect initializes the DB
+func Connect(dialect, host string, port int, user, dbname, pass string) (*gorm.DB, error) {
 	log.Info("initializing database...")
-	db, err := gorm.Open(
-		dialect,
-		fmt.Sprintf("sslmode=disable host=%s port=%d user=%s dbname=%s password=%s", host, port, user, dbname, pass))
-
-	if err != nil {
-		log.Errorf("Failed to load %s DB: %s", dialect, err.Error())
-		return nil, err
+	var url string
+	if databaseURL := os.Getenv("DATABASE_URL"); databaseURL != "" {
+		url = databaseURL
+	} else {
+		url = fmt.Sprintf("sslmode=disable host=%s port=%d user=%s dbname=%s password=%s", host, port, user, dbname, pass)
 	}
+	once.Do(func() {
+		var err error
+		DB, err = gorm.Open(
+			dialect,
+			url)
 
-	return db, nil
+		if err != nil {
+			log.Fatalf("Failed to load %s DB: %s", dialect, err.Error())
+		}
+	})
+
+	return DB, nil
 }

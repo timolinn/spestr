@@ -2,12 +2,12 @@ package util
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
 
-	"github.com/kr/pretty"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -33,17 +33,25 @@ type IPData struct {
 	Lon         int    `json:"lon"`
 }
 
-func FetchISPInfo() (IPData, error) {
+func FetchISPInfo(req *http.Request) (IPData, error) {
+	userIP, err := GetIPAddr()
+	if err != nil {
+		panic(err.Error())
+	}
+	log.Info((userIP))
 	result, err := http.Get("http://ip-api.com/json")
-	CheckError(err, "Failed to fetch data")
+	if err != nil {
+		log.Error(errors.Wrap(err, "unable to access http://ip-api.com/json at the moment"))
+	}
 	defer result.Body.Close()
 
 	r, err := ioutil.ReadAll(result.Body)
-	CheckError(err, "Failed to read stream")
+	if err != nil {
+		log.Error(errors.Wrap(err, "failed to read body"))
+	}
 
 	s := new(IPData)
 	json.Unmarshal(r, &s)
-	pretty.Println(s)
 
 	return *s, nil
 }
@@ -71,4 +79,28 @@ func Exists(filename string) bool {
 	info, err := os.Stat(filename)
 
 	return err == nil && !info.IsDir()
+}
+
+// Contains checks if a string value exists in an array of strings
+func Contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
+
+// FromRequest extracts the user IP address from req, if present.
+func fromRequest(req *http.Request) (net.IP, error) {
+	ip, _, err := net.SplitHostPort(req.RemoteAddr)
+	if err != nil {
+		return nil, fmt.Errorf("userip: %q is not IP:port", req.RemoteAddr)
+	}
+
+	userIP := net.ParseIP(ip)
+	if userIP == nil {
+		return nil, fmt.Errorf("userip: %q is not IP:port", req.RemoteAddr)
+	}
+	return userIP, nil
 }

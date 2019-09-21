@@ -1,0 +1,12 @@
+setup:
+  addons:
+    - plan: heroku-postgresql
+      as: DATABASE
+  config:
+
+build:
+  languages:
+    - go
+
+run:
+  web: cmd/spestr
