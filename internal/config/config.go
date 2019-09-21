@@ -77,7 +77,7 @@ func (c *Configuration) InitLogger(debug bool) {
 // New creates a new *Configuration
 func New() *Configuration {
 	err := godotenv.Load()
-	if err != nil {
+	if err != nil && os.Getenv("APP_ENV") != "heroku" {
 		if os.Getenv("APP_ENV") == "test" {
 			// hard code absolute path to config file
 			configFile = "/Users/timothyonyiuke/Documents/deark/Golang/spestr/spestr.yml"
